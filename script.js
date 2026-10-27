@@ -3092,13 +3092,14 @@
 
   // 레이아웃 계산 → 실제 그리기 (두 번 나눠서 캔버스 크기를 먼저 정함)
   function planSnapshot(imgs) {
-    // 지금 페이지 너비를 그대로 따라감 (화면에서 보이는 줄바꿈·배치와 같게)
-    const vw = Math.round(document.documentElement.clientWidth || window.innerWidth);
-    const narrow = vw <= 760;
+    // 한눈에 보기: 지금 창에 보이는 배치를 그대로 잼 / 머리색·눈색·테마색: 표준 폭
+    const grid = state.board === 'all' ? els.board.querySelector('.all-grid') : null;
+    const gridRect = grid ? grid.getBoundingClientRect() : null;
+    const narrow = gridRect ? gridRect.width < 700 : false;
     const P = narrow ? 16 : 28, HEAD = narrow ? 104 : 92;
     const names = state.showNames;
     const ops = [];
-    let W = clamp(vw, 320, 1400 + P * 2), H = 0;
+    let W = gridRect ? Math.round(gridRect.width) + P * 2 : 1200, H = 0;
     let title, sub;
 
     if (state.board === 'all') {
@@ -3106,49 +3107,47 @@
       const sortLabel = { hair: '머리색순', eye: '눈색순', name: '이름순', manual: '직접 배치' }[state.sortAll];
       title = '한눈에 보기';
       sub = `캐릭터 ${chars.length}명 · ${sortLabel}`;
-      const cellW = 112, gapX = 12, gapY = 26, padX = narrow ? 12 : 24, padY = narrow ? 20 : 28;
-      const innerW = W - P * 2 - padX * 2;
-      const per = Math.max(1, Math.floor((innerW + gapX) / (cellW + gapX)));
-      const cellH = 76 + 10 + (names ? 18 + 8 : 0) + 28;
-      const lines = Math.ceil(chars.length / per);
-      const panelH = padY * 2 + lines * cellH + (lines - 1) * gapY;
       const py = HEAD;
-      ops.push(ctx => { rrect(ctx, P, py, W - P * 2, panelH, 18); ctx.fillStyle = SNAP.surface; ctx.fill(); ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1; ctx.stroke(); });
-      const usedW = per * cellW + (per - 1) * gapX;
-      const startX = P + padX + Math.max(0, (innerW - usedW) / 2);
-      chars.forEach((c, i) => {
-        const col = i % per, row = Math.floor(i / per);
-        const x = startX + col * (cellW + gapX), y = py + padY + row * (cellH + gapY);
-        ops.push(ctx => {
-          const src = c.items.hair || c.items.eye;
-          const cx = x + cellW / 2;
-          drawThumb(ctx, imgs.get(src.id), cx, y + 38, 38);
-          let yy = y + 76 + 10;
-          if (names) {
-            if (c.name) {
+      if (!gridRect) {
+        H = py + 120 + P;
+      } else {
+        const panelW = gridRect.width, panelH = gridRect.height;
+        ops.push(ctx => { rrect(ctx, P, py, panelW, panelH, 18); ctx.fillStyle = SNAP.surface; ctx.fill(); ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1; ctx.stroke(); });
+        const byId = new Map(chars.map(c => [c.charId, c]));
+        for (const el of grid.querySelectorAll('.char-card')) {
+          const c = byId.get(el.dataset.charId);
+          if (!c) continue;
+          const r = el.getBoundingClientRect();
+          const th = el.querySelector('.thumb').getBoundingClientRect();
+          const nm = el.querySelector('.name-input');
+          const nr = nm && getComputedStyle(nm).display !== 'none' ? nm.getBoundingClientRect() : null;
+          const chips = [...el.querySelectorAll('.cchip i')].map(i => ({ rect: i.getBoundingClientRect(), board: i.parentElement.dataset.board }));
+          const ox = P - gridRect.left, oy = py - gridRect.top;
+          ops.push(ctx => {
+            const tr = th.width / 2;
+            drawThumb(ctx, imgs.get((c.items.hair || c.items.eye || c.items.theme).id), th.left + ox + tr, th.top + oy + tr, tr);
+            if (nr && c.name) {
               setFont(ctx, 12, 500); ctx.fillStyle = SNAP.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-              ctx.fillText(fitText(ctx, c.name, cellW - 4), cx, yy + 9);
+              ctx.fillText(fitText(ctx, c.name, r.width - 4), nr.left + ox + nr.width / 2, nr.top + oy + nr.height / 2);
             }
-            yy += 18 + 8;
-          }
-          const shown = BOARDS.filter(b => b.key !== 'theme' || (c.items.theme && state.showTheme));
-          shown.forEach((b, k) => {
-            const it = c.items[b.key];
-            const chx = cx + (k - (shown.length - 1) / 2) * 30, chy = yy + 13;
-            if (it) drawSwatch(ctx, chx, chy, 12, itemColors(it), itemMode(it));
-            else {
-              ctx.save(); ctx.setLineDash([3, 3]);
-              ctx.beginPath(); ctx.arc(chx, chy, 11.25, 0, Math.PI * 2);
-              ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
+            for (const ch of chips) {
+              const it = c.items[ch.board];
+              const cx = ch.rect.left + ox + ch.rect.width / 2, cy = ch.rect.top + oy + ch.rect.height / 2, rr = ch.rect.width / 2;
+              if (it) drawSwatch(ctx, cx, cy, rr, itemColors(it), itemMode(it));
+              else {
+                ctx.save(); ctx.setLineDash([3, 3]);
+                ctx.beginPath(); ctx.arc(cx, cy, rr - 0.75, 0, Math.PI * 2);
+                ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
+              }
             }
           });
-        });
-      });
-      H = py + panelH + P;
+        }
+        H = py + panelH + P;
+      }
     } else {
       const board = state.board;
       const items = boardItems(board);
-      const cats = catsFor(board).map(c => ({ c, list: items.filter(i => i.cat === c.key) })).filter(r => r.list.length);
+      const cats = catsFor(board).map(c => ({ c, list: items.filter(i => i.cat === c.key) }));   // 빈 칸도 포함
       title = boardLabel(board);
       sub = `${items.length}명 · ${state.layout === 'cols' ? '열 나열' : '행 나열'} · ${state.boardSort[board] === 'manual' ? '직접 배치' : '밝기순'}`;
       const cardH = 64 + (names ? 6 + 24 : 0);
@@ -3156,7 +3155,7 @@
       if (state.layout === 'cols') {
         const colW = names ? 124 : 112, gap = 8, labelH = 22, padT = 16;
         W = Math.max(720, P * 2 + cats.length * colW + (cats.length - 1) * gap);
-        const maxN = Math.max(...cats.map(r => r.list.length));
+        const maxN = Math.max(1, ...cats.map(r => r.list.length));
         const colH = padT + labelH + 14 + maxN * cardH + (maxN - 1) * 12 + 18;
         const cardW = names ? 84 : 64;
         cats.forEach((r, i) => {
@@ -3164,7 +3163,7 @@
           ops.push(ctx => {
             rrect(ctx, x, y, colW, colH, 18); ctx.fillStyle = SNAP.surface; ctx.fill(); ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1; ctx.stroke();
             setFont(ctx, 13, 600);
-            const label = r.c.label, cnt = String(r.list.length);
+            const label = r.c.label, cnt = r.list.length ? String(r.list.length) : '';
             const lw = ctx.measureText(label).width;
             setFont(ctx, 11); const cw = ctx.measureText(cnt).width;
             const total = 18 + 6 + lw + 5 + cw;
@@ -3176,6 +3175,11 @@
             setFont(ctx, 11); ctx.fillStyle = SNAP.muted;
             ctx.fillText(cnt, lx + 24 + lw + 5, ly);
             r.list.forEach((it, k) => drawCard(ctx, it, imgs, x + (colW - cardW) / 2, y + padT + labelH + 14 + k * (cardH + 12), cardW));
+            if (!r.list.length) {
+              setFont(ctx, 12); ctx.fillStyle = SNAP.muted; ctx.globalAlpha = .6; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+              ctx.fillText('비어 있음', x + colW / 2, y + padT + labelH + 18);
+              ctx.globalAlpha = 1;
+            }
           });
         });
         H = HEAD + colH + P;
@@ -3189,7 +3193,7 @@
         const per = Math.max(1, Math.floor((itemsW + gapX) / (cardW + gapX)));
         let y = HEAD;
         cats.forEach(r => {
-          const lines = Math.ceil(r.list.length / per);
+          const lines = Math.max(1, Math.ceil(r.list.length / per));
           const itemsH = lines * cardH + (lines - 1) * gapY;
           const rowH = (narrow ? labelH + itemsH : Math.max(64, itemsH)) + padY * 2;
           const ry = y;
@@ -3201,11 +3205,16 @@
             ctx.fillText(r.c.label, rowX + padX + 30, ly);
             const lw = ctx.measureText(r.c.label).width;
             setFont(ctx, 12); ctx.fillStyle = SNAP.muted;
-            ctx.fillText(String(r.list.length), rowX + padX + 30 + lw + 8, ly);
+            if (r.list.length) ctx.fillText(String(r.list.length), rowX + padX + 30 + lw + 8, ly);
             r.list.forEach((it, k) => {
               const col = k % per, line = Math.floor(k / per);
               drawCard(ctx, it, imgs, itemsX + col * (cardW + gapX), ry + padY + labelH + line * (cardH + gapY), cardW);
             });
+            if (!r.list.length) {
+              setFont(ctx, 13); ctx.fillStyle = SNAP.muted; ctx.globalAlpha = .6; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+              ctx.fillText('비어 있음', itemsX, narrow ? ry + padY + labelH + 20 : ry + padY + 32);
+              ctx.globalAlpha = 1;
+            }
           });
           y += rowH + 8;
         });
