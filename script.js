@@ -3092,10 +3092,13 @@
 
   // 레이아웃 계산 → 실제 그리기 (두 번 나눠서 캔버스 크기를 먼저 정함)
   function planSnapshot(imgs) {
-    const P = 40, HEAD = 92;
+    // 지금 페이지 너비를 그대로 따라감 (화면에서 보이는 줄바꿈·배치와 같게)
+    const vw = Math.round(document.documentElement.clientWidth || window.innerWidth);
+    const narrow = vw <= 760;
+    const P = narrow ? 16 : 28, HEAD = narrow ? 104 : 92;
     const names = state.showNames;
     const ops = [];
-    let W = 1200, H = 0;
+    let W = clamp(vw, 320, 1400 + P * 2), H = 0;
     let title, sub;
 
     if (state.board === 'all') {
@@ -3103,7 +3106,7 @@
       const sortLabel = { hair: '머리색순', eye: '눈색순', name: '이름순', manual: '직접 배치' }[state.sortAll];
       title = '한눈에 보기';
       sub = `캐릭터 ${chars.length}명 · ${sortLabel}`;
-      const cellW = 112, gapX = 12, gapY = 26, padX = 24, padY = 28;
+      const cellW = 112, gapX = 12, gapY = 26, padX = narrow ? 12 : 24, padY = narrow ? 20 : 28;
       const innerW = W - P * 2 - padX * 2;
       const per = Math.max(1, Math.floor((innerW + gapX) / (cellW + gapX)));
       const cellH = 76 + 10 + (names ? 18 + 8 : 0) + 28;
@@ -3177,20 +3180,22 @@
         });
         H = HEAD + colH + P;
       } else {
-        const rowX = P, rowW = W - P * 2, padX = 18, padY = 14, labelW = 128;
+        // 좁은 화면에서는 화면처럼 칸 이름이 위, 카드가 아래
+        const rowX = P, rowW = W - P * 2, padX = narrow ? 14 : 18, padY = narrow ? 12 : 14, labelW = narrow ? 0 : 128;
+        const labelH = narrow ? 30 : 0;
         const cardW = names ? 84 : 64, gapX = 12, gapY = 14;
-        const itemsX = rowX + padX + labelW + 16;
-        const itemsW = rowW - padX * 2 - labelW - 16;
+        const itemsX = rowX + padX + (narrow ? 0 : labelW + 16);
+        const itemsW = rowW - padX * 2 - (narrow ? 0 : labelW + 16);
         const per = Math.max(1, Math.floor((itemsW + gapX) / (cardW + gapX)));
         let y = HEAD;
         cats.forEach(r => {
           const lines = Math.ceil(r.list.length / per);
           const itemsH = lines * cardH + (lines - 1) * gapY;
-          const rowH = Math.max(64, itemsH) + padY * 2;
+          const rowH = (narrow ? labelH + itemsH : Math.max(64, itemsH)) + padY * 2;
           const ry = y;
           ops.push(ctx => {
             rrect(ctx, rowX, ry, rowW, rowH, 18); ctx.fillStyle = SNAP.surface; ctx.fill(); ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1; ctx.stroke();
-            const ly = ry + padY + 32;
+            const ly = narrow ? ry + padY + 11 : ry + padY + 32;
             drawCatChip(ctx, rowX + padX + 10, ly, 10, r.c);
             setFont(ctx, 14, 600); ctx.fillStyle = SNAP.ink; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
             ctx.fillText(r.c.label, rowX + padX + 30, ly);
@@ -3199,7 +3204,7 @@
             ctx.fillText(String(r.list.length), rowX + padX + 30 + lw + 8, ly);
             r.list.forEach((it, k) => {
               const col = k % per, line = Math.floor(k / per);
-              drawCard(ctx, it, imgs, itemsX + col * (cardW + gapX), ry + padY + line * (cardH + gapY), cardW);
+              drawCard(ctx, it, imgs, itemsX + col * (cardW + gapX), ry + padY + labelH + line * (cardH + gapY), cardW);
             });
           });
           y += rowH + 8;
@@ -3217,9 +3222,15 @@
       ctx.fillText(title, P, 68);
       const tw = ctx.measureText(title).width;
       setFont(ctx, 13); ctx.fillStyle = SNAP.muted;
-      ctx.fillText(sub, P + tw + 12, 67);
-      ctx.textAlign = 'right';
-      ctx.fillText(todayStr(), W - P, 67);
+      if (narrow) {
+        ctx.fillText(sub, P, 90);
+        setFont(ctx, 12); ctx.textAlign = 'right';
+        ctx.fillText(todayStr(), W - P, 38);
+      } else {
+        ctx.fillText(sub, P + tw + 12, 67);
+        ctx.textAlign = 'right';
+        ctx.fillText(todayStr(), W - P, 67);
+      }
     });
     return { W, H, ops, title };
   }
