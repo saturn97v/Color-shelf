@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>캐릭터 컬러 정리함</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ▼ CodePen에는 여기부터 ▼ -->
+  <header class="top">
+    <div class="brand">
+      <h1>캐릭터 컬러 정리함</h1>
+      <p>캐릭터를 한눈에 정리해보세요.</p>
+    </div>
+    <button class="guide-btn" id="guideBtn" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 113 1.5c-.7.4-1.2.8-1.2 1.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg>
+      도움말
+    </button>
+    <nav class="tabs" id="tabs" aria-label="보드"></nav>
+    <div class="view-opts">
+      <div class="seg" id="layoutSeg" role="group" aria-label="나열 방식">
+        <button type="button" data-layout="rows" title="행으로 나열">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="2" width="12" height="3" rx="1.2" fill="currentColor"/><rect x="1" y="9" width="12" height="3" rx="1.2" fill="currentColor"/></svg>
+          행
+        </button>
+        <button type="button" data-layout="cols" title="열로 나열">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3" height="12" rx="1.2" fill="currentColor"/><rect x="9" y="1" width="3" height="12" rx="1.2" fill="currentColor"/></svg>
+          열
+        </button>
+      </div>
+      <div class="seg" id="boardSortSeg" role="group" aria-label="칸 안 정렬">
+        <button type="button" data-bsort="light" title="첫 번째 색의 밝기 순서 (밝은 색 → 어두운 색)">밝기순</button>
+        <button type="button" data-bsort="manual" title="끌어다 놓은 순서 그대로">직접 배치</button>
+      </div>
+      <div class="seg" id="sortSeg" role="group" aria-label="정렬" hidden>
+        <button type="button" data-sort="hair">머리색순</button>
+        <button type="button" data-sort="eye">눈색순</button>
+        <button type="button" data-sort="name">이름순</button>
+        <button type="button" data-sort="manual">직접 배치</button>
+      </div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="nameCheck" checked><span class="box" aria-hidden="true"></span>이름 보기</label>
+        <label class="check" id="themeCheckWrap" hidden><input type="checkbox" id="themeCheck" checked><span class="box" aria-hidden="true"></span>테마색 보기</label>
+      </div>
+    </div>
+    <div class="actions">
+      <label class="btn primary">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        캐릭터 추가
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      </label>
+      <button class="btn" id="linkBtn" type="button">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.8 2.8 0 014 4l-1 1M9 11.5l-1 1a2.8 2.8 0 01-4-4l1-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span id="linkBtnText">눈색에서 가져오기</span>
+      </button>
+      <button class="btn" id="snapBtn" type="button">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7.5M4.8 6.8L8 10l3.2-3.2M3 12.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        이미지로 저장
+      </button>
+      <button class="btn" id="exportBtn" type="button">백업</button>
+      <label class="btn">
+        복원
+        <input type="file" id="importInput" accept="application/json,.json" hidden>
+      </label>
+      <button class="btn" id="resetAllBtn" type="button">초기화</button>
+    </div>
+  </header>
+
+  <main class="board" id="board"></main>
+
+  <div class="dropzone" aria-hidden="true"><span>여기에 놓으면 추가됩니다</span></div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="sheet-head">
+        <div>
+          <h2 id="modalTitle">원으로 자르고 색 찍기</h2>
+          <p class="muted" id="modalSub"></p>
+        </div>
+        <button class="icon-btn" id="modalClose" type="button" aria-label="닫기">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+
+      <div class="sheet-body">
+        <section class="stage-wrap" id="stageWrap">
+          <canvas id="stage"></canvas>
+          <div class="stage-tools">
+            <span class="hint" id="stageHint">드래그로 위치 이동 · 휠/슬라이더로 크기</span>
+            <input type="range" id="sizeRange" min="1" max="100" value="60" aria-label="원 크기">
+            <div class="stage-btns">
+              <button class="stage-btn" id="sameCropBtn" type="button">같은 영역을 크롭</button>
+              <button class="stage-btn" id="resetCropBtn" type="button">초기화</button>
+              <button class="stage-btn" id="replaceBtn" type="button" hidden>원본 사진 바꾸기</button>
+            </div>
+            <input type="file" id="replaceInput" accept="image/*" hidden>
+          </div>
+        </section>
+
+        <aside class="panel">
+          <div class="preview-wrap">
+            <canvas id="preview"></canvas>
+          </div>
+          <p class="hint center" id="previewHint">원 안을 누르면 스포이드로 색을 찍습니다</p>
+
+          <div class="slots-head">
+            <span>색상</span>
+            <em id="slotsHint">2개 이상이면 Two-tone으로 분류</em>
+          </div>
+          <div class="color-slots" id="colorSlots"></div>
+
+          <div class="swatch-row">
+            <label class="swatch" id="swatch" title="색 고르기">
+              <input type="color" id="colorPicker" aria-label="색 고르기">
+            </label>
+            <div class="swatch-text">
+              <input id="hexInput" class="hex-input" type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label="컬러코드 직접 입력" placeholder="#RRGGBB">
+              <span class="hover" id="hoverText"></span>
+            </div>
+            <button class="link-btn" id="autoPickBtn" type="button" hidden>자동 추출</button>
+            <button class="none-btn" id="noneBtn" type="button" title="없음 (투명)">없음</button>
+          </div>
+
+          <label class="field" id="nameField">
+            <span>이름 <em>선택</em></span>
+            <input id="nameInput" type="text" placeholder="캐릭터 이름" autocomplete="off">
+          </label>
+
+          <div class="field">
+            <span>분류</span>
+            <div class="cat-grid" id="catGrid"></div>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="sheet-foot">
+        <button class="btn danger" id="deleteBtn" type="button">삭제</button>
+        <span class="spacer"></span>
+        <button class="btn" id="skipBtn" type="button">건너뛰기</button>
+        <button class="btn primary" id="saveBtn" type="button">저장</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal" id="charModal" hidden>
+    <div class="sheet char-sheet" role="dialog" aria-modal="true" aria-labelledby="charTitle">
+      <header class="sheet-head">
+        <div>
+          <h2 id="charTitle">캐릭터 편집</h2>
+        </div>
+        <button class="icon-btn" id="charClose" type="button" aria-label="닫기">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="char-body">
+        <div class="char-photo">
+          <canvas id="charCanvas"></canvas>
+        </div>
+        <p class="hint center" id="charHint">색 칸을 고른 뒤 사진을 누르면 스포이드로 찍힙니다</p>
+        <div class="char-tools">
+          <button class="btn" id="charPhotoBtn" type="button" data-tip="새 사진을 넣고 머리색 → 눈색 순서로 다시 지정합니다. 입력된 색은 그대로 유지됩니다. 편집창에 사진을 끌어다 놓아도 됩니다.">
+            <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 3.5l1-1.5h3l1 1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            사진 바꾸기
+          </button>
+          <input type="file" id="charPhotoInput" accept="image/*" hidden>
+          <button class="btn" id="charChartBtn" type="button" data-tip="이 캐릭터의 색을 한 장의 컬러차트 이미지로 저장합니다">
+            <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7.5M4.8 6.8L8 10l3.2-3.2M3 12.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            컬러차트 저장
+          </button>
+        </div>
+        <label class="field" id="charNameField">
+          <span>이름</span>
+          <input id="charName" type="text" placeholder="캐릭터 이름" autocomplete="off" maxlength="80">
+        </label>
+        <div class="crows" id="charRows"></div>
+      </div>
+      <footer class="sheet-foot">
+        <button class="btn danger" id="charDelete" type="button">캐릭터 삭제</button>
+        <span class="spacer"></span>
+        <button class="btn" id="charCancel" type="button">취소</button>
+        <button class="btn primary" id="charSave" type="button">저장</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal" id="picker" hidden>
+    <div class="sheet picker-sheet" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+      <header class="sheet-head">
+        <div>
+          <h2 id="pickerTitle">머리색에서 캐릭터 가져오기</h2>
+          <p class="muted" id="pickerSub">고른 캐릭터의 원본 사진으로 다시 찍습니다</p>
+        </div>
+        <button class="icon-btn" id="pickerClose" type="button" aria-label="닫기">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="picker-body">
+        <div class="picker-grid" id="pickerGrid"></div>
+      </div>
+      <footer class="sheet-foot">
+        <button class="link-btn left" id="pickerAll" type="button">모두 선택</button>
+        <span class="spacer"></span>
+        <button class="btn" id="pickerCancel" type="button">취소</button>
+        <button class="btn primary" id="pickerOk" type="button" disabled>가져오기</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal" id="snapModal" hidden>
+    <div class="sheet snap-sheet" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
+      <header class="sheet-head">
+        <div>
+          <h2 id="snapTitle">이미지로 저장</h2>
+          <p class="muted" id="snapSub"></p>
+        </div>
+        <button class="icon-btn" id="snapClose" type="button" aria-label="닫기">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="snap-body">
+        <img id="snapImg" alt="저장될 이미지 미리보기">
+      </div>
+      <footer class="sheet-foot">
+        <span class="hint">이미지를 우클릭(폰은 길게 누르기)해서 저장해도 됩니다</span>
+        <span class="spacer"></span>
+        <button class="btn" id="snapCancel" type="button">닫기</button>
+        <a class="btn primary" id="snapDownload" download>PNG 다운로드</a>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal" id="guideModal" hidden>
+    <div class="sheet guide-sheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+      <header class="sheet-head">
+        <div>
+          <h2 id="guideTitle">정리함 도움말</h2>
+        </div>
+        <button class="icon-btn" id="guideClose" type="button" aria-label="닫기">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="guide-body">
+        <div class="guide-item"><span class="g-num">1</span><div>
+          <p><b>캐릭터 추가</b> 버튼 혹은 드래그&amp;드롭으로 새 캐릭터를 보관할 수 있습니다. 일괄 추가도 가능합니다.</p>
+          <p>머리색과 눈색을 고르고 나면 캐릭터가 등록됩니다.</p>
+        </div></div>
+        <div class="guide-item"><span class="g-num">2</span><div>
+          <p>스포이드 기능으로 <b>이미지에서 색상을 추출할 수 있습니다.</b> 직접 컬러코드를 입력하는 것도 가능합니다.</p>
+          <p>대머리, 눈이 없거나 가려진 캐릭터 등은 <b>없음</b>으로 표현할 수 있습니다. <span class="g-note">(색상 미지정과 별개)</span></p>
+        </div></div>
+        <div class="guide-item"><span class="g-num">3</span><div>
+          <p>보관된 캐릭터의 썸네일을 클릭하면 <b>캐릭터 편집</b> 창으로 들어갑니다. 필요에 따라 테마색 및 기타 컬러코드를 추가할 수 있습니다. <span class="g-note">(피부색이나 옷색 등을 추가해 보세요.)</span> 모든 컬러코드를 정리해 이미지로도 저장할 수 있습니다.</p>
+        </div></div>
+        <div class="guide-item"><span class="g-num">4</span><div>
+          <p><b>한눈에 보기</b>에서는 등록된 캐릭터를 모아보실 수 있으며, 컬러칩을 클릭하면 컬러코드가 복사됩니다.</p>
+        </div></div>
+        <div class="guide-item"><span class="g-num">5</span><div>
+          <p>정리하신 내용은 개인 브라우저 안에 저장됩니다. <b>백업</b> 및 <b>복원</b> 버튼으로 다른 기기에 옮겨 정리하실 수 있습니다.</p>
+        </div></div>
+      </div>
+      <footer class="sheet-foot">
+        <span class="spacer"></span>
+        <button class="btn primary" id="guideOk" type="button">확인</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal" id="resetModal" hidden>
+    <div class="sheet confirm-sheet" role="alertdialog" aria-modal="true" aria-labelledby="resetTitle" aria-describedby="resetDesc">
+      <header class="sheet-head">
+        <div>
+          <h2 id="resetTitle">전체 초기화</h2>
+        </div>
+        <button class="icon-btn" id="resetClose" type="button" aria-label="닫기">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="confirm-body" id="resetDesc">
+        <p>등록된 캐릭터 <b id="resetCount">0명</b>과 모든 색 정보가 삭제됩니다. 삭제된 내용은 되돌릴 수 없습니다.</p>
+        <p class="confirm-tip">초기화하기 전에 <b>백업</b> 버튼으로 파일을 저장해 두면, 나중에 <b>복원</b> 버튼으로 다시 불러올 수 있습니다.</p>
+      </div>
+      <footer class="sheet-foot">
+        <button class="btn" id="resetBackupBtn" type="button">먼저 백업하기</button>
+        <span class="spacer"></span>
+        <button class="btn" id="resetCancel" type="button">취소</button>
+        <button class="btn danger-fill" id="resetConfirm" type="button">초기화</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <!-- ▲ CodePen에는 여기까지 ▲ -->
+
+  <script src="script.js"></script>
+</body>
+</html>
