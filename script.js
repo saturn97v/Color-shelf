@@ -15,14 +15,13 @@
     { key: 'brown',    label: 'Brown',    sw: '#8a5a3c' },
     { key: 'black',    label: 'Black',      sw: '#1b1b1d' },
     { key: 'gray',     label: 'Gray',    sw: '#9b9a97' },
-    { key: 'silver',   label: 'Silver',      sw: null },
     { key: 'white',    label: 'White',    sw: '#ffffff' },
     { key: 'twotone',  label: 'Two-tone',  sw: null, boards: ['hair'] },
     { key: 'oddeye',   label: 'Odd-eye',   sw: null, boards: ['eye'] },
     { key: 'other',    label: 'Other',     sw: null },
   ];
   // 예전 버전 칸 → 현재 칸
-  const LEGACY_CAT = { indigo: 'blue', gradient: 'other' };
+  const LEGACY_CAT = { indigo: 'blue', gradient: 'other', silver: 'gray' };   // Silver는 Gray로 통합
   const CAT = Object.fromEntries(CATS.map(c => [c.key, c]));
   // 보드별로 쓰는 칸 (머리색: 투톤 / 눈색: 오드아이)
   const catsFor = (board) => CATS.filter(c => !c.boards || c.boards.includes(board));
@@ -173,7 +172,6 @@
     if (s < 0.13 || (s < 0.22 && v < 0.32)) {
       if (v > 0.86) return 'white';
       if (v < 0.26) return 'black';
-      if (v >= 0.64) return 'silver';            // 밝은 회색 = 실버
       return 'gray';
     }
     // 어둡거나 탁한 주황~적갈색 = 브라운
@@ -2989,9 +2987,11 @@
   }
 
   // 색 원 그리기: single(단색) / split(투톤·오드아이) / blend(Other 섞기)
-  function drawSwatch(ctx, cx, cy, r, colors, mode) {
+  function drawSwatch(ctx, cx, cy, r, colors, mode, corner) {
+    // corner가 있으면 모서리가 둥근 정사각형, 없으면 원
+    const shape = () => { if (corner != null) rrect(ctx, cx - r, cy - r, r * 2, r * 2, corner); else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); } };
     ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+    shape(); ctx.clip();
     if (colors.includes(NONE)) { ctx.fillStyle = checker(ctx); ctx.fillRect(cx - r, cy - r, r * 2, r * 2); }
     if (colors.length === 1 || mode === 'single') {
       if (colors[0] !== NONE) { ctx.fillStyle = colors[0]; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); }
@@ -3004,12 +3004,13 @@
       colors.forEach((c, i) => {
         if (c === NONE) return;
         const a0 = Math.PI / 2 + i * step;              // CSS conic 'from 180deg'와 같은 시작점(아래)
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r + 1, a0, a0 + step); ctx.closePath();
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r * 1.5, a0, a0 + step); ctx.closePath();
         ctx.fillStyle = c; ctx.fill();
       });
     }
     ctx.restore();
-    ctx.beginPath(); ctx.arc(cx, cy, r - 0.5, 0, Math.PI * 2);
+    if (corner != null) rrect(ctx, cx - r + 0.5, cy - r + 0.5, r * 2 - 1, r * 2 - 1, Math.max(0, corner - 0.5));
+    else { ctx.beginPath(); ctx.arc(cx, cy, r - 0.5, 0, Math.PI * 2); }
     ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 1; ctx.stroke();
   }
   const itemMode = (it) => (itemColors(it).length === 1 ? 'single' : it.cat === 'other' ? 'blend' : 'split');
@@ -3070,7 +3071,7 @@
     ctx.beginPath(); ctx.arc(dx, dy, 11.5, 0, Math.PI * 2); ctx.fillStyle = SNAP.surface; ctx.fill();
     drawSwatch(ctx, dx, dy, 9, itemColors(it), itemMode(it));
     if (state.showNames && it.name) {
-      setFont(ctx, 11); ctx.fillStyle = SNAP.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      setFont(ctx, 12); ctx.fillStyle = SNAP.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(fitText(ctx, it.name, cardW - 4), cx, y + 64 + 6 + 12);
     }
   }
@@ -3127,16 +3128,21 @@
             const tr = th.width / 2;
             drawThumb(ctx, imgs.get((c.items.hair || c.items.eye || c.items.theme).id), th.left + ox + tr, th.top + oy + tr, tr);
             if (nr && c.name) {
-              setFont(ctx, 12, 500); ctx.fillStyle = SNAP.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+              setFont(ctx, 12); ctx.fillStyle = SNAP.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
               ctx.fillText(fitText(ctx, c.name, r.width - 4), nr.left + ox + nr.width / 2, nr.top + oy + nr.height / 2);
             }
             for (const ch of chips) {
               const it = c.items[ch.board];
               const cx = ch.rect.left + ox + ch.rect.width / 2, cy = ch.rect.top + oy + ch.rect.height / 2, rr = ch.rect.width / 2;
-              if (it) drawSwatch(ctx, cx, cy, rr, itemColors(it), itemMode(it));
+              // 화면의 칩 모양을 그대로: 반지름이 절반 이상이면 원, 아니면 둥근 정사각
+              const rad = getComputedStyle(document.querySelector('.cchip i')).borderTopLeftRadius;
+              const radPx = rad.endsWith('%') ? (parseFloat(rad) / 100) * ch.rect.width : parseFloat(rad) || 0;
+              const corner = radPx >= rr - 0.5 ? null : radPx;
+              if (it) drawSwatch(ctx, cx, cy, rr, itemColors(it), itemMode(it), corner);
               else {
                 ctx.save(); ctx.setLineDash([3, 3]);
-                ctx.beginPath(); ctx.arc(cx, cy, rr - 0.75, 0, Math.PI * 2);
+                if (corner == null) { ctx.beginPath(); ctx.arc(cx, cy, rr - 0.75, 0, Math.PI * 2); }
+                else rrect(ctx, cx - rr + 0.75, cy - rr + 0.75, rr * 2 - 1.5, rr * 2 - 1.5, Math.max(0, corner - 0.75));
                 ctx.strokeStyle = SNAP.line; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
               }
             }
