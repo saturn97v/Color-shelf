@@ -716,6 +716,7 @@
       flow: o.flow || 'single',
       change: !!o.change,
       colors: ['#888888'], picks: [null], slot: 0, manual0: false, manualCat: false, cat: null,
+      cropKey: undefined,
     });
 
     const isNew = o.mode === 'new';
@@ -1048,12 +1049,12 @@
     else pctx.drawImage(modal.img, 0, 0, S, S);
     pctx.restore();
 
-    // 원을 옮기면 찍어둔 위치에서 다시 추출
-    modal.picks.forEach((p, i) => {
-      if (!p) return;
-      const h = sampleAt(p);
-      if (h) modal.colors[i] = h;
-    });
+    // 한 번 찍은 색은 원(영역)을 옮겨도 그대로 유지.
+    // 영역이 바뀌면 찍은 위치 표시만 지움 (그 자리는 이제 다른 픽셀이라서)
+    const key = modal.mode === 'new' ? `${modal.cx}|${modal.cy}|${modal.r}` : 'edit';
+    if (modal.cropKey !== undefined && modal.cropKey !== key) modal.picks = modal.colors.map(() => null);
+    modal.cropKey = key;
+    // 아직 아무 색도 찍지 않았을 때만 대표색을 자동으로 따라감
     if (!modal.manual0) modal.colors[0] = dominant(els.preview);
     refreshColorUI();
   }
