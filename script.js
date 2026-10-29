@@ -3306,7 +3306,7 @@
     els.snapTitle.textContent = title === '컬러차트' ? '컬러차트를 저장했습니다' : '이미지를 저장했습니다';
     els.snapSub.textContent = '';
     $('#shareUrlText').textContent = SITE_URL;
-    $('#shareX').href = `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TAG)}&url=${encodeURIComponent(SITE_URL)}`;
+    $('#shareX').href = xIntentUrl();
     els.snapModal.hidden = false;
     document.body.classList.add('modal-open');
   }
@@ -3315,17 +3315,21 @@
     if (!modal.open && !ed.open && els.picker.hidden) document.body.classList.remove('modal-open');
   }
   function shareFile() { return new File([share.blob], share.name, { type: 'image/png' }); }
+  const xIntentUrl = () => `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TAG)}&url=${encodeURIComponent(SITE_URL)}`;
+  // 폰·태블릿에서만 시스템 공유 시트 사용 (PC의 공유 창에는 X가 없음)
+  const isMobileDevice = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);   // iPadOS
 
   // X: 폰(공유 시트 지원)에서는 이미지까지 첨부해 공유, PC에서는 이미지를 저장하고 X 글쓰기 창을 엶
   $('#shareX').addEventListener('click', (e) => {
     if (!share.blob) return;
     let file = null;
     try { file = shareFile(); } catch (err) { file = null; }
-    if (file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+    if (isMobileDevice() && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
       e.preventDefault();
       navigator.share({ files: [file], text: `${SHARE_TAG} ${SITE_URL}` }).catch((err) => {
-        if (err && err.name === 'AbortError') return;
-        toast('공유하지 못했습니다');
+        if (err && err.name === 'AbortError') return;          // 사용자가 닫음
+        location.href = xIntentUrl();                           // 공유 시트가 안 되면 X 글쓰기로
       });
       return;
     }
