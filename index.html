@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261030a">
+  <link rel="stylesheet" href="style.css?v=20261030c">
 </head>
 <body>
   <!-- ▼ CodePen에는 여기부터 ▼ -->
@@ -232,13 +232,13 @@
       <div class="snap-body">
         <img id="snapImg" alt="공유할 이미지 미리보기">
         <p class="share-text"><span id="shareTag">#캐릭터컬러정리함</span> <span id="shareUrlText"></span></p>
+        <p class="share-hint" id="shareHint"></p>
       </div>
       <footer class="sheet-foot share-foot">
-        <a class="btn share-x" id="shareX" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">
-          <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.1l-4.8-6.3L6.6 22H3.5l7.3-8.3L1 2h6.3l4.3 5.7L18.9 2zm-1.1 18.2h1.7L6.3 3.7H4.5l13.3 16.5z"/></svg>
-          X에 공유
-        </a>
-        <button class="btn" id="shareCopy" type="button">URL 복사</button>
+        <button class="btn share-main" id="shareBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          공유하기
+        </button>
         <span class="spacer"></span>
         <button class="btn primary" id="shareClose" type="button">닫기</button>
       </footer>
@@ -308,6 +308,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <!-- ▲ CodePen에는 여기까지 ▲ -->
 
-  <script src="script.js?v=20261030a"></script>
+  <script src="script.js?v=20261030c"></script>
 </body>
 </html>

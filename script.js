@@ -3306,7 +3306,7 @@
     els.snapTitle.textContent = title === '컬러차트' ? '컬러차트를 저장했습니다' : '이미지를 저장했습니다';
     els.snapSub.textContent = '';
     $('#shareUrlText').textContent = SITE_URL;
-    $('#shareX').href = xIntentUrl();
+    $('#shareHint').textContent = '공유하기를 누르면 링크와 이미지가 함께 복사됩니다. 자유롭게 붙여넣어 주세요.';
     els.snapModal.hidden = false;
     document.body.classList.add('modal-open');
   }
@@ -3315,30 +3315,33 @@
     if (!modal.open && !ed.open && els.picker.hidden) document.body.classList.remove('modal-open');
   }
   function shareFile() { return new File([share.blob], share.name, { type: 'image/png' }); }
-  const xIntentUrl = () => `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TAG)}&url=${encodeURIComponent(SITE_URL)}`;
-  // 폰·태블릿에서만 시스템 공유 시트 사용 (PC의 공유 창에는 X가 없음)
+  // 폰·태블릿에서만 시스템 공유 시트 사용, PC는 이미지를 클립보드에 복사
   const isMobileDevice = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
     || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);   // iPadOS
-
-  // X: 폰(공유 시트 지원)에서는 이미지까지 첨부해 공유, PC에서는 이미지를 저장하고 X 글쓰기 창을 엶
-  $('#shareX').addEventListener('click', (e) => {
-    if (!share.blob) return;
-    let file = null;
-    try { file = shareFile(); } catch (err) { file = null; }
-    if (isMobileDevice() && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
-      e.preventDefault();
-      navigator.share({ files: [file], text: `${SHARE_TAG} ${SITE_URL}` }).catch((err) => {
-        if (err && err.name === 'AbortError') return;          // 사용자가 닫음
-        location.href = xIntentUrl();                           // 공유 시트가 안 되면 X 글쓰기로
-      });
-      return;
+  // 이미지 + 해시태그·링크를 한 번에 클립보드로 (붙여넣는 곳에 따라 받아들이는 형식이 다름)
+  async function copyShareBundle() {
+    const text = `${SHARE_TAG} ${SITE_URL}`;
+    const html = `<p>${SHARE_TAG} <a href="${SITE_URL}">${SITE_URL}</a></p><img src="${els.snapImg.src}" alt="">`;
+    const tb = (t, type) => new Blob([t], { type });
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({
+          'image/png': share.blob,
+          'text/plain': tb(text, 'text/plain'),
+          'text/html': tb(html, 'text/html'),
+        })]);
+        return true;
+      } catch (err) {}
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': share.blob, 'text/plain': tb(text, 'text/plain') })]);
+        return true;
+      } catch (err) {}
     }
-    // 글쓰기 창은 링크로 열림 (이미지는 이미 저장됨 → 첨부)
-    toast('X 글쓰기 창에 방금 저장한 이미지를 첨부해 주십시오');
-  });
-  $('#shareCopy').addEventListener('click', async () => {
-    const ok = await copyText(SITE_URL);
-    toast(ok ? '링크를 복사했습니다' : '복사하지 못했습니다. 브라우저 권한을 확인해 주십시오');
+    return false;
+  }
+  $('#shareBtn').addEventListener('click', async () => {
+    if (!share.blob) return;
+    if (!(await copyShareBundle())) toast('복사하지 못했습니다. 브라우저 권한을 확인해 주십시오');
   });
   $('#shareClose').addEventListener('click', closeSnap);
 

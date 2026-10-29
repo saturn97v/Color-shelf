@@ -888,13 +888,14 @@ body.modal-open .fab { display: none; }
 }
 #shareTag { color: #1d9bf0; font-weight: 600; }
 #shareUrlText { color: var(--muted); }
-.share-x { background: #0f1419; border-color: #0f1419; color: #fff !important; }
-.share-x:hover { background: #272c30; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .share-x { background: #fff; border-color: #fff; color: #0f1419 !important; } }
-:root[data-theme="dark"] .share-x { background: #fff; border-color: #fff; color: #0f1419 !important; }
+.share-hint { margin: -4px 2px 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.share-main { background: #0f1419; border-color: #0f1419; color: #fff !important; }
+.share-main:hover { background: #272c30; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .share-main { background: #fff; border-color: #fff; color: #0f1419 !important; } }
+:root[data-theme="dark"] .share-main { background: #fff; border-color: #fff; color: #0f1419 !important; }
 @media (max-width: 760px) {
-  .share-foot .btn { flex: 1 1 calc(50% - 4px); }
-  .share-foot #shareClose { flex-basis: 100%; }
+  .share-foot .btn { flex: 1 1 0; }
+
 }
 
 /* ---------- 크레딧 (잘 안 보이게) ---------- */
