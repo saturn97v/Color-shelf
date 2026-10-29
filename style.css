@@ -877,3 +877,30 @@ body.modal-open .fab { display: none; }
 @media (max-width: 760px) {
   .add-top { display: none !important; }
 }
+
+/* ---------- 공유 창 ---------- */
+.snap-sheet { width: min(560px, 100%); }
+.snap-body { display: flex; flex-direction: column; gap: 12px; }
+.snap-body img { max-height: 52vh; object-fit: contain; background: var(--surface-2); }
+.share-text {
+  margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2);
+  font-size: 13px; line-height: 1.5; color: var(--ink); word-break: break-all;
+}
+#shareTag { color: #1d9bf0; font-weight: 600; }
+#shareUrlText { color: var(--muted); }
+.share-x { background: #0f1419; border-color: #0f1419; color: #fff !important; }
+.share-x:hover { background: #272c30; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .share-x { background: #fff; border-color: #fff; color: #0f1419 !important; } }
+:root[data-theme="dark"] .share-x { background: #fff; border-color: #fff; color: #0f1419 !important; }
+@media (max-width: 760px) {
+  .share-foot .btn { flex: 1 1 calc(50% - 4px); }
+  .share-foot #shareClose { flex-basis: 100%; }
+}
+
+/* ---------- 크레딧 (잘 안 보이게) ---------- */
+.credit { text-align: center; padding: 0 16px 28px; margin-top: -72px; }
+.credit a { font-size: 11px; color: var(--muted); opacity: .5; text-decoration: none; letter-spacing: .02em; }
+.credit a:hover { opacity: 1; text-decoration: underline; }
+@media (max-width: 760px) { .credit { margin-top: -88px; padding-bottom: 32px; text-align: left; } }
+
+#snapSub:empty { display: none; }
