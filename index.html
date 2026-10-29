@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261027i">
+  <link rel="stylesheet" href="style.css?v=20261029e">
 </head>
 <body>
   <!-- ▼ CodePen에는 여기부터 ▼ -->
@@ -71,6 +71,7 @@
   </header>
 
   <main class="board" id="board"></main>
+  <footer class="credit"><a href="https://x.com/SATURN97v_?s=20" target="_blank" rel="noopener">제작 @SATURN97v_</a></footer>
 
   <label class="fab" id="addBtn" title="캐릭터 추가">
     <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -146,6 +147,7 @@
       <footer class="sheet-foot">
         <button class="btn danger" id="deleteBtn" type="button">삭제</button>
         <span class="spacer"></span>
+        <button class="btn" id="backBtn" type="button" hidden>← 돌아가기</button>
         <button class="btn" id="skipBtn" type="button">건너뛰기</button>
         <button class="btn primary" id="saveBtn" type="button">저장</button>
       </footer>
@@ -220,7 +222,7 @@
     <div class="sheet snap-sheet" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
       <header class="sheet-head">
         <div>
-          <h2 id="snapTitle">이미지로 저장</h2>
+          <h2 id="snapTitle">공유</h2>
           <p class="muted" id="snapSub"></p>
         </div>
         <button class="icon-btn" id="snapClose" type="button" aria-label="닫기">
@@ -228,15 +230,20 @@
         </button>
       </header>
       <div class="snap-body">
-        <img id="snapImg" alt="저장될 이미지 미리보기">
+        <img id="snapImg" alt="공유할 이미지 미리보기">
+        <p class="share-text"><span id="shareTag">#캐릭터컬러정리함</span> <span id="shareUrlText"></span></p>
       </div>
-      <footer class="sheet-foot">
-        <span class="hint">이미지를 우클릭(폰은 길게 누르기)해서 저장해도 됩니다</span>
+      <footer class="sheet-foot share-foot">
+        <a class="btn share-x" id="shareX" href="https://x.com/intent/post" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.1l-4.8-6.3L6.6 22H3.5l7.3-8.3L1 2h6.3l4.3 5.7L18.9 2zm-1.1 18.2h1.7L6.3 3.7H4.5l13.3 16.5z"/></svg>
+          X에 공유
+        </a>
+        <button class="btn" id="shareCopy" type="button">URL 복사</button>
         <span class="spacer"></span>
-        <button class="btn" id="snapCancel" type="button">닫기</button>
-        <a class="btn primary" id="snapDownload" download>PNG 다운로드</a>
+        <button class="btn primary" id="shareClose" type="button">닫기</button>
       </footer>
     </div>
+  </div>
   </div>
 
   <div class="modal" id="guideModal" hidden>
@@ -301,6 +308,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <!-- ▲ CodePen에는 여기까지 ▲ -->
 
-  <script src="script.js?v=20261027i"></script>
+  <script src="script.js?v=20261029e"></script>
 </body>
 </html>

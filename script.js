@@ -56,10 +56,10 @@
     swatch: $('#swatch'), noneBtn: $('#noneBtn'), hexInput: $('#hexInput'), colorPicker: $('#colorPicker'), hoverText: $('#hoverText'), autoBtn: $('#autoPickBtn'),
     nameInput: $('#nameInput'), nameField: $('#nameField'), catGrid: $('#catGrid'),
     layoutSeg: $('#layoutSeg'), sortSeg: $('#sortSeg'), boardSortSeg: $('#boardSortSeg'), nameCheck: $('#nameCheck'), themeCheck: $('#themeCheck'), themeCheckWrap: $('#themeCheckWrap'),
-    deleteBtn: $('#deleteBtn'), skipBtn: $('#skipBtn'), saveBtn: $('#saveBtn'),
+    deleteBtn: $('#deleteBtn'), skipBtn: $('#skipBtn'), saveBtn: $('#saveBtn'), backBtn: $('#backBtn'),
     toast: $('#toast'), slotsHint: $('#slotsHint'), sameCropBtn: $('#sameCropBtn'), resetCropBtn: $('#resetCropBtn'), previewHint: $('#previewHint'), stageHint: $('#stageHint'),
     snapBtn: $('#snapBtn'), snapModal: $('#snapModal'), snapImg: $('#snapImg'), snapSub: $('#snapSub'),
-    snapClose: $('#snapClose'), snapTitle: $('#snapTitle'), snapCancel: $('#snapCancel'), snapDownload: $('#snapDownload'),
+    snapClose: $('#snapClose'), snapTitle: $('#snapTitle'),
     charModal: $('#charModal'), charName: $('#charName'), charNameField: $('#charNameField'),
     charPhotoBtn: $('#charPhotoBtn'), charPhotoInput: $('#charPhotoInput'), charChartBtn: $('#charChartBtn'),
     charCanvas: $('#charCanvas'), charHint: $('#charHint'), charRows: $('#charRows'),
@@ -789,6 +789,8 @@
       els.sub.textContent = `${queueDone + 1} / ${queueTotal}` + (modal.fileName ? ` · ${modal.fileName}` : '');
       const keep = hasChar(modal.charId, modal.board);
       els.skipBtn.hidden = false;
+      // 눈색 단계에서는 머리색으로 돌아갈 수 있음
+      els.backBtn.hidden = !(modal.flow === 'both' && modal.board === 'eye');
       if (modal.change) {
         // 사진 바꾸기: 기존 값이 채워진 채로 순서대로, 언제든 마칠 수 있음
         if (firstStep()) {
@@ -799,13 +801,14 @@
           els.saveBtn.textContent = queue.length ? '저장하고 다음' : '저장하고 마치기';
         }
       } else if (firstStep()) {
-        els.skipBtn.textContent = keep ? '머리색은 그대로 두기' : '머리색 건너뛰기';
+        els.skipBtn.textContent = keep ? '머리색은 그대로 두기' : '건너뛰기';
         els.saveBtn.textContent = '저장하고 눈색 →';
       } else {
-        els.skipBtn.textContent = modal.flow === 'both' ? (keep ? '눈색은 그대로 두기' : '눈색 건너뛰기') : (keep ? '그대로 두기' : '건너뛰기');
+        els.skipBtn.textContent = modal.flow === 'both' ? (keep ? '눈색은 그대로 두기' : '건너뛰기') : (keep ? '그대로 두기' : '건너뛰기');
         els.saveBtn.textContent = queue.length ? '저장하고 다음 사진' : '저장';
       }
     } else {
+      els.backBtn.hidden = true;
       const b = BOARDS.find(b => b.key === modal.item.board);
       els.sub.textContent = `${b ? b.label : ''} · ${CAT[modal.item.cat].label}`;
       els.saveBtn.textContent = '저장';
@@ -1494,6 +1497,13 @@
 
   els.saveBtn.addEventListener('click', () => onSave());
   els.skipBtn.addEventListener('click', onSkip);
+  // 돌아가기: 눈색 → 머리색 (저장해 둔 머리색의 원 위치·색을 그대로 불러옴)
+  els.backBtn.addEventListener('click', () => {
+    if (!modal.open || modal.board !== 'eye') return;
+    const hair = state.items.find(i => i.charId === modal.charId && i.board === 'hair');
+    goToStep('hair', '', false);
+    if (hair && hair.crop) { applyCrop(hair.crop); syncRange(); redraw(); }
+  });
   els.close.addEventListener('click', onClose);
   els.deleteBtn.addEventListener('click', onDelete);
   els.modal.addEventListener('pointerdown', (e) => { if (e.target === els.modal) onClose(); });
@@ -3277,19 +3287,26 @@
       els.snapBtn.disabled = false;
     }
   }
+  /* ---------- 저장 / 공유 ---------- */
+  const SITE_URL = 'https://saturn97v.github.io/Color-shelf/';
+  const SHARE_TAG = '#캐릭터컬러정리함';
+  let share = { blob: null, name: '' };
+
   async function showSnapCanvas(cv, title, sub, fileName) {
     const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     if (!blob) { toast('이미지를 만들지 못했습니다'); return; }
-    // 누르면 바로 다운로드
-    await saveFile(blob, fileName, `${title === '컬러차트' ? '컬러차트를' : '이미지를'} 저장했습니다`);
-    return;
-    if (els.snapDownload.href) URL.revokeObjectURL(els.snapDownload.href);
-    // 미리보기는 dataURL (blob 주소가 막힌 환경에서도 보이게), 다운로드는 blob
+    // 바로 저장하고, '저장했습니다' 창에서 공유까지 이어서
+    const ok = await saveFile(blob, fileName);
+    if (ok) openShare(cv, blob, title, fileName);
+  }
+
+  function openShare(cv, blob, title, fileName) {
+    share = { blob, name: fileName };
     els.snapImg.src = cv.toDataURL('image/png');
-    els.snapDownload.href = URL.createObjectURL(blob);
-    els.snapDownload.download = fileName;
-    els.snapTitle.textContent = title;
-    els.snapSub.textContent = sub;
+    els.snapTitle.textContent = title === '컬러차트' ? '컬러차트를 저장했습니다' : '이미지를 저장했습니다';
+    els.snapSub.textContent = '';
+    $('#shareUrlText').textContent = SITE_URL;
+    $('#shareX').href = `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TAG)}&url=${encodeURIComponent(SITE_URL)}`;
     els.snapModal.hidden = false;
     document.body.classList.add('modal-open');
   }
@@ -3297,11 +3314,33 @@
     els.snapModal.hidden = true;
     if (!modal.open && !ed.open && els.picker.hidden) document.body.classList.remove('modal-open');
   }
+  function shareFile() { return new File([share.blob], share.name, { type: 'image/png' }); }
+
+  // X: 폰(공유 시트 지원)에서는 이미지까지 첨부해 공유, PC에서는 이미지를 저장하고 X 글쓰기 창을 엶
+  $('#shareX').addEventListener('click', (e) => {
+    if (!share.blob) return;
+    let file = null;
+    try { file = shareFile(); } catch (err) { file = null; }
+    if (file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+      e.preventDefault();
+      navigator.share({ files: [file], text: `${SHARE_TAG} ${SITE_URL}` }).catch((err) => {
+        if (err && err.name === 'AbortError') return;
+        toast('공유하지 못했습니다');
+      });
+      return;
+    }
+    // 글쓰기 창은 링크로 열림 (이미지는 이미 저장됨 → 첨부)
+    toast('X 글쓰기 창에 방금 저장한 이미지를 첨부해 주십시오');
+  });
+  $('#shareCopy').addEventListener('click', async () => {
+    const ok = await copyText(SITE_URL);
+    toast(ok ? '링크를 복사했습니다' : '복사하지 못했습니다. 브라우저 권한을 확인해 주십시오');
+  });
+  $('#shareClose').addEventListener('click', closeSnap);
+
   els.snapBtn.addEventListener('click', makeSnapshot);
   els.snapClose.addEventListener('click', closeSnap);
-  els.snapCancel.addEventListener('click', closeSnap);
   els.snapModal.addEventListener('pointerdown', (e) => { if (e.target === els.snapModal) closeSnap(); });
-  els.snapDownload.addEventListener('click', () => setTimeout(() => toast('이미지를 저장했습니다'), 300));
 
   /* ---------- 도움말 ---------- */
   const guideModal = $('#guideModal');
@@ -3337,13 +3376,14 @@
       try {
         await dl.save({ filename, data: blob });
         if (doneMsg) toast(doneMsg);
+        return true;
       } catch (e) {
         const code = e && e.code;
-        if (code === 'declined') return;
+        if (code === 'declined') return false;
         if (code === 'rate_limited') toast('잠시 후 다시 눌러 주십시오');
         else toast('여기서는 파일을 저장할 수 없습니다');
       }
-      return;
+      return false;
     }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3354,6 +3394,7 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
     if (doneMsg) toast(doneMsg);
+    return true;
   }
 
   /* ---------- 토스트 ---------- */
