@@ -1,3 +1,9 @@
+@font-face {
+  font-family: 'Waguri';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2403@1.0/WAGURITTF.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
 :root {
   --bg: #f4f4f6;
   --surface: #ffffff;
@@ -11,7 +17,7 @@
   --stage: #17171a;
   --radius: 18px;
   --shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.08);
-  --display: "Jua", Pretendard, "Noto Sans KR", sans-serif;
+  --display: "Waguri", Pretendard, "Noto Sans KR", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -811,10 +817,10 @@ body.is-drop-local .dropzone { inset: auto 50% 24px auto; transform: translateX(
   .board.is-cols .empty { width: calc(100vw - 32px); }
 }
 
-/* ---------- 귀여운 제목 폰트 (Jua) ---------- */
-.brand h1 { font-family: var(--display); font-weight: 400; font-size: 21px; letter-spacing: 0; }
-.sheet-head h2 { font-family: var(--display); font-weight: 400; font-size: 19px; letter-spacing: 0; }
-.empty strong { font-family: var(--display); font-weight: 400; font-size: 17px; }
+/* ---------- 제목 폰트 (와구리체: 주아체보다 넓어서 약 90% 크기) ---------- */
+.brand h1 { font-family: var(--display); font-weight: 400; font-size: 19px; letter-spacing: 0; }
+.sheet-head h2 { font-family: var(--display); font-weight: 400; font-size: 17px; letter-spacing: 0; }
+.empty strong { font-family: var(--display); font-weight: 400; font-size: 15px; }
 
 /* ---------- 가이드: 번호 + 문단 ---------- */
 .guide-body { gap: 16px; }

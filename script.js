@@ -2061,7 +2061,7 @@
      캐릭터 컬러차트 (편집창 → 세로형 이미지)
      ========================================================= */
   async function makeCharChart() {
-    if (document.fonts && document.fonts.ready) { try { await document.fonts.load('400 26px "Jua"', '캐릭터'); await document.fonts.ready; } catch (e) { /* 무시 */ } }
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.load('400 26px "Waguri"', '캐릭터'); await document.fonts.ready; } catch (e) { /* 무시 */ } }
     const W = 720, P = 48;
     const name = els.charName.value.trim();
     const rows = BOARDS.filter(b => sideOn(ed.sides[b.key])).map(b => ({ label: b.label, colors: ed.sides[b.key].colors.slice(), cat: sideCat(ed.sides[b.key]) }));
@@ -2111,7 +2111,7 @@
     // 이름
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (name) {
-      ctx.font = `400 30px ${SNAP.display}`; ctx.fillStyle = SNAP.ink;
+      ctx.font = `400 27px ${SNAP.display}`; ctx.fillStyle = SNAP.ink;
       ctx.fillText(fitText(ctx, name, W - P * 2), cx, y + 14);
       y += 40;
     }
@@ -2968,7 +2968,7 @@
      ========================================================= */
   const SNAP = {
     bg: '#f4f4f6', surface: '#ffffff', ink: '#1b1b1f', muted: '#87878f', line: '#e4e4e9',
-    display: '"Jua", Pretendard, "Noto Sans KR", sans-serif',
+    display: '"Waguri", Pretendard, "Noto Sans KR", sans-serif',
     font: 'Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif',
   };
   const setFont = (ctx, size, weight = 400) => { ctx.font = `${weight} ${size}px ${SNAP.font}`; };
@@ -3243,7 +3243,7 @@
       ctx.fillStyle = SNAP.bg; ctx.fillRect(0, 0, W, H);
       setFont(ctx, 12, 600); ctx.fillStyle = SNAP.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       ctx.fillText('캐릭터 컬러 정리함', P, 38);
-      ctx.font = `400 26px ${SNAP.display}`; ctx.fillStyle = SNAP.ink;
+      ctx.font = `400 23px ${SNAP.display}`; ctx.fillStyle = SNAP.ink;
       ctx.fillText(title, P, 68);
       const tw = ctx.measureText(title).width;
       setFont(ctx, 13); ctx.fillStyle = SNAP.muted;
@@ -3265,7 +3265,7 @@
     if (!pool.length) { toast('저장할 카드가 아직 없습니다'); return; }
     els.snapBtn.disabled = true;
     try {
-      if (document.fonts && document.fonts.ready) { try { await document.fonts.load('400 26px "Jua"', '캐릭터'); await document.fonts.ready; } catch (e) { /* 무시 */ } }
+      if (document.fonts && document.fonts.ready) { try { await document.fonts.load('400 26px "Waguri"', '캐릭터'); await document.fonts.ready; } catch (e) { /* 무시 */ } }
       const imgs = await loadImgs(pool);
       const plan = planSnapshot(imgs);
       // 아주 긴 이미지는 브라우저 한계를 넘지 않게 배율을 낮춤
